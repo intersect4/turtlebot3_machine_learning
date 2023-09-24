@@ -5,6 +5,7 @@ import numpy as np
 import math
 from math import pi
 from geometry_msgs.msg import Twist, Point, Pose
+from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
@@ -21,6 +22,9 @@ class Env():
         self.get_goalbox = False
         self.position = Pose()
         self.pub_cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=5)
+        self.pub_actual_pos = rospy.Publisher('actual_position', String, queue_size=5)
+        self.pub_data_info = rospy.Publisher('data_info', String, queue_size=5)
+        self.pub_goal_position = rospy.Publisher('goal_position', String, queue_size=5)
         self.sub_odom = rospy.Subscriber('odom', Odometry, self.getOdometry)
         self.reset_proxy = rospy.ServiceProxy('gazebo/reset_simulation', Empty)
         self.unpause_proxy = rospy.ServiceProxy('gazebo/unpause_physics', Empty)
@@ -68,6 +72,7 @@ class Env():
         if min_range > min(scan_range) > 0:
             done = True
 
+        self.pub_actual_pos.publish(str(self.position.x) + "," + str(self.position.y))
         current_distance = round(math.hypot(self.goal_x - self.position.x, self.goal_y - self.position.y), 2)
         if current_distance < 0.2:
             self.get_goalbox = True
@@ -97,6 +102,7 @@ class Env():
             reward = 200
             self.pub_cmd_vel.publish(Twist())
             self.goal_x, self.goal_y = self.respawn_goal.getPosition(True, delete=True)
+            self.pub_goal_position.publish(str(self.goal_x) + "," + str(self.goal_y))
             self.goal_distance = self.getGoalDistace()
             self.get_goalbox = False
 
@@ -138,7 +144,9 @@ class Env():
                 pass
 
         if self.initGoal:
+
             self.goal_x, self.goal_y = self.respawn_goal.getPosition()
+            self.pub_goal_position.publish(str(self.goal_x) + "," + str(self.goal_y))
             self.initGoal = False
 
         self.goal_distance = self.getGoalDistace()
