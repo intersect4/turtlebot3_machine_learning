@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+#models
+/turtlebot3_dqn/save_model/*
+turtlebot3_dqn/save_model/*
+
 # Distribution / packaging
 .Python
 build/

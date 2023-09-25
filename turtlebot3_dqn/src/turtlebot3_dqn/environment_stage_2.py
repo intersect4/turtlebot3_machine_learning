@@ -5,7 +5,7 @@ import numpy as np
 import math
 from math import pi
 from geometry_msgs.msg import Twist, Point, Pose
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 from sensor_msgs.msg import LaserScan
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
@@ -17,6 +17,7 @@ class Env():
         self.goal_x = 0
         self.goal_y = 0
         self.heading = 0
+        self.max_goal_distance = 0.5
         self.action_size = action_size
         self.initGoal = True
         self.get_goalbox = False
@@ -30,6 +31,7 @@ class Env():
         self.unpause_proxy = rospy.ServiceProxy('gazebo/unpause_physics', Empty)
         self.pause_proxy = rospy.ServiceProxy('gazebo/pause_physics', Empty)
         self.respawn_goal = Respawn()
+        self.get_episode = rospy.Subscriber('episode', Float32, self.ajustar_valor_mimino)
 
     def getGoalDistace(self):
         goal_distance = round(math.hypot(self.goal_x - self.position.x, self.goal_y - self.position.y), 2)
@@ -56,7 +58,7 @@ class Env():
     def getState(self, scan):
         scan_range = []
         heading = self.heading
-        min_range = 0.13
+        min_range = 0.27
         done = False
 
         for i in range(len(scan.ranges)):
@@ -74,7 +76,7 @@ class Env():
 
         self.pub_actual_pos.publish(str(self.position.x) + "," + str(self.position.y))
         current_distance = round(math.hypot(self.goal_x - self.position.x, self.goal_y - self.position.y), 2)
-        if current_distance < 0.2:
+        if current_distance < self.max_goal_distance:
             self.get_goalbox = True
 
         return scan_range + [heading, current_distance, obstacle_min_range, obstacle_angle], done
@@ -153,3 +155,10 @@ class Env():
         state, done = self.getState(data)
 
         return np.asarray(state)
+
+    def ajustar_valor_mimino(self, valor):
+        episodio_actual = max(0, min(valor.data, 600))
+        minimo = 0.08
+        maximo = 0.25
+        self.max_goal_distance = minimo + (maximo - minimo) * (1 - (episodio_actual / 600))**2
+        print(self.max_goal_distance)

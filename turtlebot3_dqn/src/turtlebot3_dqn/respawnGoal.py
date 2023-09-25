@@ -2,6 +2,7 @@
 
 import rospy
 import random
+import numpy as np
 import time
 import os
 from gazebo_msgs.srv import SpawnModel, DeleteModel
@@ -17,21 +18,24 @@ class Respawn():
         self.model = self.f.read()
         self.stage = rospy.get_param('/stage_number')
         self.goal_position = Pose()
-        self.init_goal_x = 0.6
+        self.init_goal_x = 0.3 
         self.init_goal_y = 0.0
         self.goal_position.position.x = self.init_goal_x
         self.goal_position.position.y = self.init_goal_y
         self.modelName = 'goal'
-        self.obstacle_1 = 0.6, 0.6
-        self.obstacle_2 = 0.6, -0.6
-        self.obstacle_3 = -0.6, 0.6
-        self.obstacle_4 = -0.6, -0.6
+        self.obstacle_1 = 0.85, 0.85
+        self.obstacle_2 = 0.85, -0.85
+        self.obstacle_3 = -0.85, 0.85
+        self.obstacle_4 = -0.85, -0.85
         self.last_goal_x = self.init_goal_x
         self.last_goal_y = self.init_goal_y
         self.last_index = 0
         self.sub_model = rospy.Subscriber('gazebo/model_states', ModelStates, self.checkModel)
         self.check_model = False
         self.index = 0
+        self.range = [ -1.3, -1.0, -0.6, -0.3, 0.3, 0.6, 1.0, 1.3]
+        self.weights = [ 0.05, 0.05, 0.1, 0.3, 0.3, 0.1, 0.05, 0.05]
+
 
     def checkModel(self, model):
         self.check_model = False
@@ -67,17 +71,17 @@ class Respawn():
 
         if self.stage != 4:
             while position_check:
-                goal_x = random.randrange(-12, 13) / 10.0
-                goal_y = random.randrange(-12, 13) / 10.0
-                if abs(goal_x - self.obstacle_1[0]) <= 0.4 and abs(goal_y - self.obstacle_1[1]) <= 0.4:
+                goal_x = np.random.choice(self.range, 1, p=self.weights)[0]
+                goal_y = np.random.choice(self.range, 1, p=self.weights)[0]
+                if abs(goal_x - self.obstacle_1[0]) <= 0.5 and abs(goal_y - self.obstacle_1[1]) <= 0.5:
                     position_check = True
-                elif abs(goal_x - self.obstacle_2[0]) <= 0.4 and abs(goal_y - self.obstacle_2[1]) <= 0.4:
+                elif abs(goal_x - self.obstacle_2[0]) <= 0.5 and abs(goal_y - self.obstacle_2[1]) <= 0.5:
                     position_check = True
-                elif abs(goal_x - self.obstacle_3[0]) <= 0.4 and abs(goal_y - self.obstacle_3[1]) <= 0.4:
+                elif abs(goal_x - self.obstacle_3[0]) <= 0.5 and abs(goal_y - self.obstacle_3[1]) <= 0.5:
                     position_check = True
-                elif abs(goal_x - self.obstacle_4[0]) <= 0.4 and abs(goal_y - self.obstacle_4[1]) <= 0.4:
+                elif abs(goal_x - self.obstacle_4[0]) <= 0.5 and abs(goal_y - self.obstacle_4[1]) <= 0.5:
                     position_check = True
-                elif abs(goal_x - 0.0) <= 0.4 and abs(goal_y - 0.0) <= 0.4:
+                elif abs(goal_x - 0.0) <= 0.5 and abs(goal_y - 0.0) <= 0.5:
                     position_check = True
                 else:
                     position_check = False
@@ -90,7 +94,7 @@ class Respawn():
 
         else:
             while position_check:
-                goal_x_list = [0.6, 1.9, 0.5, 0.2, -0.8, -1, -1.9, 0.5, 2, 0.5, 0, -0.1, -2]
+                goal_x_list = [0.85, 1.9, 0.5, 0.2, -0.8, -1, -1.9, 0.5, 2, 0.5, 0, -0.1, -2]
                 goal_y_list = [0, -0.5, -1.9, 1.5, -0.9, 1, 1.1, -1.5, 1.5, 1.8, -1, 1.6, -0.8]
 
                 self.index = random.randrange(0, 13)
